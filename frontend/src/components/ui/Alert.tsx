@@ -1,0 +1,5 @@
+import type { HTMLAttributes, ReactNode } from "react";
+import { CheckCircle2, CircleAlert, Info, TriangleAlert } from "lucide-react";
+import { cn } from "./utils";
+const variants = { info: [Info, "border-kurmesh-blue bg-blue-50 text-kurmesh-navy"], success: [CheckCircle2, "border-kurmesh-success bg-green-50 text-kurmesh-text"], warning: [TriangleAlert, "border-kurmesh-warning bg-amber-50 text-kurmesh-text"], danger: [CircleAlert, "border-kurmesh-danger bg-red-50 text-kurmesh-text"] } as const;
+export function Alert({ variant = "info", title, children, className, ...props }: HTMLAttributes<HTMLDivElement> & { variant?: keyof typeof variants; title?: ReactNode }) { const [Icon, colors] = variants[variant]; return <div role="alert" className={cn("flex gap-3 rounded-lg border-l-4 p-4", colors, className)} {...props}><Icon aria-hidden="true" className="h-5 w-5 shrink-0" /><div>{title && <p className="font-bold">{title}</p>}{children && <div className={title ? "mt-1 text-sm" : "text-sm"}>{children}</div>}</div></div>; }

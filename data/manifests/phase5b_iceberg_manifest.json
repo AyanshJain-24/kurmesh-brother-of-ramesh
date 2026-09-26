@@ -1,0 +1,45 @@
+{
+  "manifest_version": 1,
+  "purpose": "Phase 5B real-data validation metadata only; no raw archive or CSV is stored in this repository.",
+  "dataset": {
+    "name": "BYU MERS Consolidated Stats Antarctic Iceberg Database",
+    "version": "3.0",
+    "organization": "Brigham Young University Microwave Earth Remote Sensing Laboratory; consolidated BYU/NIC data",
+    "resource_url": "https://www.scp.byu.edu/data/iceberg/stats_database_v3.0.zip",
+    "format": "ZIP archive of one CSV per iceberg track",
+    "archive_present_locally_at_validation": true,
+    "archive_retrieval_was_not_repeated": true,
+    "archive_size_bytes": 4397440,
+    "archive_sha256": "aed0c7dd53dfa6d2e4a0f9b92d2419a02ff0402bb45a62d07980e11900f49fda"
+  },
+  "validated_schema": {
+    "track_identifier": "CSV filename stem",
+    "columns": ["date", "date_gap", "disp", "flags", "lat", "lon", "mask", "size", "vel_angle"],
+    "timestamp": "date, normally YYYYDDD",
+    "position": "lat/lon decimal degrees",
+    "observed_position_quality": "least significant bit of flags; 1 means at least one contributing observed position, 0 means all contributing positions are interpolated",
+    "consecutive_pair_rule": "date_gap == 1 and parsed timestamp difference is exactly 24 hours",
+    "longitude_rule": "normalize longitude differences across the antimeridian before displacement calculation"
+  },
+  "recomputed_validation": {
+    "csv_tracks": 556,
+    "rows": 398405,
+    "malformed_date_rows": 119,
+    "invalid_coordinate_rows": 0,
+    "duplicate_track_date_rows": 0,
+    "non_chronological_adjacent_rows": 0,
+    "parsed_date_min": "1976-02-01",
+    "parsed_date_max": "2019-08-14",
+    "consecutive_24_hour_pairs": 394562,
+    "consecutive_24_hour_pairs_with_observed_position_at_both_endpoints": 308538,
+    "adjacent_pairs_requiring_longitude_wrap": 97,
+    "tracks_with_longitude_wrap": 28
+  },
+  "data_quality_policy_required_before_training": [
+    "Exclude malformed date rows until an authoritative interpretation is documented.",
+    "Use only chronological, duplicate-free, consecutive 24-hour pairs with observed-position quality at both endpoints.",
+    "Apply antimeridian-aware longitude handling before any geographic displacement calculation.",
+    "Treat size equal to zero as unavailable, not a measured iceberg size."
+  ],
+  "validation_status": "GO_FOR_PHASE_5C_DATA_PREPARATION_ONLY"
+}

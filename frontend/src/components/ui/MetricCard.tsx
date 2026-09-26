@@ -1,0 +1,5 @@
+import type { ReactNode } from "react";
+import { Card } from "./Card";
+import { StatusBadge, type EnvironmentalStatus } from "./StatusBadge";
+export interface MetricCardProps { label: string; value: ReactNode; unit?: string; secondary?: ReactNode; trend?: ReactNode; status?: EnvironmentalStatus; icon?: ReactNode; }
+export function MetricCard({ label, value, unit, secondary, trend, status, icon }: MetricCardProps) { return <Card><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-kurmesh-muted">{label}</p><p className="mt-2 font-mono text-3xl font-bold text-kurmesh-text">{value}{unit && <span className="ml-1 font-sans text-base font-medium text-kurmesh-muted">{unit}</span>}</p></div>{icon && <span aria-hidden="true" className="text-kurmesh-blue">{icon}</span>}</div><div className="mt-4 flex flex-wrap items-center gap-2">{status && <StatusBadge status={status} />}{secondary && <span className="text-sm text-kurmesh-muted">{secondary}</span>}{trend && <span className="text-sm font-medium text-kurmesh-teal">{trend}</span>}</div></Card>; }

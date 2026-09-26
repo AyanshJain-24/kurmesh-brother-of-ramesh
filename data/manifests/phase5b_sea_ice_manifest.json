@@ -1,0 +1,105 @@
+{
+  "manifest_version": 1,
+  "purpose": "Phase 5B real-data validation metadata only; no raw data is stored in this repository.",
+  "dataset": {
+    "name": "NOAA/NSIDC Climate Data Record of Passive Microwave Sea Ice Concentration",
+    "dataset_id": "G02202",
+    "version": "6",
+    "product_type": "final Climate Data Record",
+    "organization": "National Snow and Ice Data Center for NOAA/NCEI",
+    "base_url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/",
+    "format": "NetCDF4/HDF5",
+    "hemisphere": "south"
+  },
+  "retrieved_at_utc": "2026-09-24T12:49:42Z",
+  "selected_samples": [
+    {
+      "date": "1978-10-25",
+      "url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/south/daily/1978/sic_pss25_19781025_n07_v06r00.nc",
+      "file_size_bytes": 465225,
+      "sha256": "6af1029d1662d542869a0974fb9dd112dd6b4ea1eda4b79b29fa2c71efef426c",
+      "time_days_since_1970_01_01": 3219,
+      "fill_count": 21893
+    },
+    {
+      "date": "1990-01-01",
+      "url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/south/daily/1990/sic_pss25_19900101_F08_v06r00.nc",
+      "file_size_bytes": 370047,
+      "sha256": "78eee62fe3ca345380ce6f25482bb3f83a7da77b22cd6c190cb683b3b5251863",
+      "time_days_since_1970_01_01": 7305,
+      "fill_count": 21893
+    },
+    {
+      "date": "2000-01-01",
+      "url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/south/daily/2000/sic_pss25_20000101_F13_v06r00.nc",
+      "file_size_bytes": 377975,
+      "sha256": "ab8a06ded8a90aec97e21795df72826721cb446b22b12f54378797cad4c8b307",
+      "time_days_since_1970_01_01": 10957,
+      "fill_count": 21893
+    },
+    {
+      "date": "2010-01-01",
+      "url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/south/daily/2010/sic_pss25_20100101_F17_v06r00.nc",
+      "file_size_bytes": 363245,
+      "sha256": "db6ed1c3920f82d289ac4fd27f0bb1a0f12d02672ba859e46aebbd63d36f2102",
+      "time_days_since_1970_01_01": 14610,
+      "fill_count": 21893
+    },
+    {
+      "date": "2020-01-01",
+      "url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/south/daily/2020/sic_pss25_20200101_F17_v06r00.nc",
+      "file_size_bytes": 349465,
+      "sha256": "863029c5cbbf3ba58d70adf3100e6f10db1601356e04df152479e01deeb0e9a2",
+      "time_days_since_1970_01_01": 18262,
+      "fill_count": 21893
+    },
+    {
+      "date": "2024-01-01",
+      "url": "https://noaadata.apps.nsidc.org/NOAA/G02202_V6/south/daily/2024/sic_pss25_20240101_F17_v06r00.nc",
+      "file_size_bytes": 355695,
+      "sha256": "5e18460ead4566158894308cc87dbca8c10525cdedf84f42ca2935674c04537d",
+      "time_days_since_1970_01_01": 19723,
+      "fill_count": 21893
+    }
+  ],
+  "validated_contract": {
+    "variable": "cdr_seaice_conc",
+    "standard_name": "sea_ice_area_fraction",
+    "long_name": "NOAA/NSIDC CDR of Passive Microwave Sea Ice Concentration",
+    "dtype": "uint8",
+    "shape_time_y_x": [1, 332, 316],
+    "units": "1",
+    "raw_valid_range": [0, 100],
+    "scale_factor": 0.01,
+    "add_offset": 0.0,
+    "decoded_valid_range": [0.0, 1.0],
+    "fill_value": 255,
+    "missing_value_policy": "Preserve 255 as missing; never convert it to zero. Exclude it from valid value statistics and any later feature/target eligibility decision.",
+    "time": {
+      "units": "days since 1970-01-01",
+      "calendar": "standard"
+    },
+    "coordinates": {
+      "x_length": 316,
+      "y_length": 332,
+      "x_first_last_m": [-3937500.0, 3937500.0],
+      "y_first_last_m": [4337500.0, -3937500.0],
+      "x_sha256": "c82b5ad53e3404a93a13556ee2f9def0c619fe5d3fd3a797cd05794f7909d535",
+      "y_sha256": "14063bef7b727ed29f86b7ee723793d5ad4fa8c40c7ce7d7a95e236d2be6e3e2"
+    },
+    "crs": {
+      "srid": "urn:ogc:def:crs:EPSG::3412",
+      "grid_mapping_name": "polar_stereographic",
+      "proj4text": "+proj=stere +lat_0=-90 +lat_ts=-70 +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=6378273 +b=6356889.449 +units=m +no_defs"
+    },
+    "ancillary_datasets_observed": [
+      "cdr_seaice_conc_stdev",
+      "cdr_seaice_conc_qa_flag",
+      "cdr_seaice_conc_interp_spatial_flag",
+      "cdr_seaice_conc_interp_temporal_flag",
+      "surface_type_mask"
+    ],
+    "grid_validation": "All six samples have identical cdr_seaice_conc shape, x/y coordinate SHA-256 values, and selected CRS attributes."
+  },
+  "validation_status": "GO_FOR_PHASE_5C_DATA_PREPARATION_ONLY"
+}

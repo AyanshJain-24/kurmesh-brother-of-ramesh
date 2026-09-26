@@ -1,0 +1,5 @@
+import { AlertCircle, CheckCircle2, CircleOff, Clock3, TriangleAlert } from "lucide-react";
+import { Badge } from "./Badge";
+export type EnvironmentalStatus = "LIVE" | "STALE" | "DEGRADED" | "UNAVAILABLE" | "ERROR";
+const statusInfo = { LIVE: { Icon: CheckCircle2, label: "Live", className: "bg-green-50 text-kurmesh-success" }, STALE: { Icon: Clock3, label: "Stale", className: "bg-amber-50 text-kurmesh-warning" }, DEGRADED: { Icon: TriangleAlert, label: "Degraded", className: "bg-amber-50 text-kurmesh-warning" }, UNAVAILABLE: { Icon: CircleOff, label: "Unavailable", className: "bg-slate-100 text-kurmesh-muted" }, ERROR: { Icon: AlertCircle, label: "Error", className: "bg-red-50 text-kurmesh-danger" } } as const;
+export function StatusBadge({ status, className }: { status: EnvironmentalStatus; className?: string }) { const { Icon, label, className: colors } = statusInfo[status]; return <Badge className={`${colors} gap-1.5 ${className ?? ""}`} role="status" aria-label={`Status: ${label}`}><Icon aria-hidden="true" className="h-3.5 w-3.5" />{label}</Badge>; }
