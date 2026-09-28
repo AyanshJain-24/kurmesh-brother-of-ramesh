@@ -5,6 +5,9 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir --timeout 300 --retries 10 -r requirements.txt
 COPY backend/ .
 COPY ml/ /app/ml
+COPY routing/ /app/routing
+COPY models/ /app/models
+COPY data/ /app/data
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000

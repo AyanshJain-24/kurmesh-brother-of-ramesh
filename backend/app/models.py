@@ -150,6 +150,7 @@ class RouteCandidate(Timestamped, Base):
     prediction_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("predictions.id", ondelete="SET NULL"), index=True)
     version: Mapped[int] = mapped_column(nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="DRAFT", nullable=False)
+    risk_data_status: Mapped[str | None] = mapped_column(String(32), default="UNKNOWN")
     geometry: Mapped[str] = mapped_column(Geometry("LINESTRING", srid=4326, spatial_index=True), nullable=False)
     distance_nm: Mapped[float | None]
     estimated_duration_hours: Mapped[float | None]

@@ -29,6 +29,58 @@ class IcebergDemoInferenceRequest(Payload):
         return value
 
 
+class IcebergMLInferenceRequest(Payload):
+    """Exact 6 physical features for iceberg drift; strips legacy fields."""
+
+    latitude: float = Field(ge=-90.0, le=90.0)
+    longitude: float = Field(ge=-180.0, le=180.0)
+    length_m: float = Field(gt=0.0)
+    width_m: float = Field(gt=0.0)
+    estimated_draft_m: float = Field(gt=0.0)
+    coriolis_f: float | None = None
+    # Strip and ignore legacy fields if provided
+    speed: float | None = None
+    heading: float | None = None
+
+    def to_adapter_features(self) -> dict[str, float]:
+        f = self.coriolis_f
+        if f is None or not math.isfinite(f):
+            f = 2.0 * 7.2921159e-5 * math.sin(math.radians(self.latitude))
+        return {
+            "latitude": float(self.latitude),
+            "longitude": float(self.longitude),
+            "length_m": float(self.length_m),
+            "width_m": float(self.width_m),
+            "estimated_draft_m": float(self.estimated_draft_m),
+            "coriolis_f": float(f),
+        }
+
+
+class SeaIceMLInferenceRequest(Payload):
+    """Spatial grid request for sea ice concentration prediction."""
+
+    bounds: list[float] | None = None
+    coordinates: list[list[float]] | None = None
+    lat_min: float | None = None
+    lat_max: float | None = None
+    lon_min: float | None = None
+    lon_max: float | None = None
+
+    @model_validator(mode="after")
+    def validate_grid(self):
+        if self.bounds is None and self.coordinates is None:
+            if None not in (self.lat_min, self.lat_max, self.lon_min, self.lon_max):
+                self.bounds = [self.lon_min, self.lat_min, self.lon_max, self.lat_max]
+            else:
+                raise ValueError("Either bounds [min_lon, min_lat, max_lon, max_lat], named min/max coordinates, or coordinates list must be provided")
+        return self
+
+    def to_spatial_grid(self) -> dict[str, Any]:
+        if self.bounds:
+            return {"type": "bounds", "bounds": self.bounds}
+        return {"type": "coordinates", "coordinates": self.coordinates}
+
+
 class RegisterRequest(Payload):
     email: EmailStr
     password: str = Field(min_length=12, max_length=128)
@@ -177,6 +229,7 @@ class RouteCandidateCreateRequest(Payload):
     geometry: GeoJSONLineString
     prediction_id: uuid.UUID | None = None
     status: Literal["DRAFT", "READY", "REJECTED"] = "DRAFT"
+    risk_data_status: str | None = "UNKNOWN"
     distance_nm: float | None = Field(default=None, ge=0)
     estimated_duration_hours: float | None = Field(default=None, ge=0)
     risk_score: float | None = Field(default=None, ge=0)
@@ -188,6 +241,7 @@ class RouteCandidateCreateRequest(Payload):
 
 class RouteCandidateUpdateRequest(Payload):
     status: Literal["DRAFT", "READY", "REJECTED"] | None = None
+    risk_data_status: str | None = None
     distance_nm: float | None = Field(default=None, ge=0)
     estimated_duration_hours: float | None = Field(default=None, ge=0)
     risk_score: float | None = Field(default=None, ge=0)

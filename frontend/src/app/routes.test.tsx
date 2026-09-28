@@ -13,7 +13,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); localStorage.clear(); vi.unstubAllGlobals(); });
 function renderPath(path: string) { const client = new QueryClient({ defaultOptions: { queries: { retry: false } } }); return render(<QueryClientProvider client={client}><MemoryRouter initialEntries={[path]}><AppShell><AppRoutes /></AppShell></MemoryRouter></QueryClientProvider>); }
 describe("application navigation", () => {
-  it("redirects the root route to documentation", () => { renderPath("/"); expect(screen.getByRole("heading", { name: "Clear evidence for human route decisions.", level: 1 })).toBeInTheDocument(); });
+  it("redirects the root route to missions", async () => { renderPath("/"); expect(await screen.findByRole("heading", { name: "Mission route decision workspace", level: 2 })).toBeInTheDocument(); });
   it("shows the active dashboard navigation item", () => { renderPath("/dashboard"); expect(screen.getByRole("link", { name: "Overview" })).toHaveClass("border-kurmesh-blue"); });
   it("connects sidebar Routes navigation to route management", async () => { renderPath("/routes"); expect(await screen.findByRole("heading", { name: "Route candidates and human review", level: 2 })).toBeInTheDocument(); });
   it("renders dashboard unavailable states", () => { renderPath("/dashboard"); expect(screen.getByText("No candidate routes")).toBeInTheDocument(); expect(screen.getByLabelText("Operational map")).toBeInTheDocument(); expect(screen.getAllByLabelText("Status: Unavailable").length).toBeGreaterThan(0); });

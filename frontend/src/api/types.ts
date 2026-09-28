@@ -77,6 +77,7 @@ export interface RouteCandidate {
   prediction_id: string | null;
   version: number;
   status: string;
+  risk_data_status?: string | null;
   geometry: { type: "LineString"; coordinates: [number, number][] } | null;
   distance_nm: number | null;
   estimated_duration_hours: number | null;

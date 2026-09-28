@@ -63,12 +63,15 @@ describe("OperationalMap", () => {
     expect(mapInstance.jumpTo).toHaveBeenCalledWith({ center: [0, -82], zoom: 1.65 });
   });
 
-  it("reports initialization failure without rendering operational data", () => {
+  it("renders the polar fallback visualization when MapLibre initialization fails", () => {
     mapConstructor.mockImplementationOnce(() => { throw new Error("WebGL unavailable"); });
     render(<OperationalMap />);
 
-    expect(screen.getByText("Operational map unavailable")).toBeInTheDocument();
-    expect(screen.getByText("The map foundation could not be initialized. No operational layers are displayed.")).toBeInTheDocument();
+    expect(screen.queryByText("Operational map unavailable")).not.toBeInTheDocument();
+    expect(screen.getByTestId("polar-svg-fallback")).toBeInTheDocument();
+    expect(screen.getByText("Origin (20°E, 70°S)")).toBeInTheDocument();
+    expect(screen.getByText("Destination (50°E, 68°S)")).toBeInTheDocument();
+    expect(screen.getByTestId("scale-indicator")).toBeInTheDocument();
   });
 
   it("adds only returned candidate route GeoJSON and focuses a selected route", () => {

@@ -25,3 +25,6 @@ data/manifests/*
 !data/manifests/phase5b_*.json
 
 *.tsbuildinfo
+
+backend/*.db
+backend/kurmesh.db

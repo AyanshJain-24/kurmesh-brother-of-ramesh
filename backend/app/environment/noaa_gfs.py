@@ -21,7 +21,10 @@ from urllib.request import urlopen
 
 import numpy as np
 import xarray as xr
-import cfgrib
+try:
+    import cfgrib
+except (ImportError, RuntimeError):
+    cfgrib = None
 
 from app.config import ProviderConfiguration
 from app.environment.providers import (
@@ -119,6 +122,8 @@ class NoaaGfsAdapter:
                 stream.write(payload)
             # Variables are on different GRIB surfaces, so cfgrib separates them.
             # Merge only the filtered message groups returned for this one request.
+            if cfgrib is None:
+                raise ProviderUnavailableError("ecCodes/cfgrib library is not available in this environment")
             datasets = cfgrib.open_datasets(path, indexpath="")
             dataset = xr.merge(datasets, compat="override")
             try:

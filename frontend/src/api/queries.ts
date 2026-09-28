@@ -5,8 +5,8 @@ import { getHealth } from "./health";
 import { getMissions } from "./missions";
 import { getVessels } from "./vessels";
 import { getPredictions } from "./predictions";
+import { getMissionRoutes, getRouteCandidates, getRoutes } from "./routes";
 import { getMissionAlerts } from "./alerts";
-import { getMissionRoutes, getRouteCandidates } from "./routes";
 
 export const useHealth = () => useQuery({ queryKey: ["health"], queryFn: ({ signal }) => getHealth(signal), staleTime: 30_000, retry: false });
 export const useMissions = () => useQuery({ queryKey: ["missions"], queryFn: ({ signal }) => getMissions(signal), enabled: hasAccessToken(), staleTime: 60_000 });
@@ -16,4 +16,5 @@ export const useEnvironmentSources = () => useQuery({ queryKey: ["environment", 
 export const usePredictions = () => useQuery({ queryKey: ["predictions"], queryFn: ({ signal }) => getPredictions(signal), enabled: hasAccessToken(), staleTime: 60_000 });
 export const useRouteCandidates = (missionId?: string) => useQuery({ queryKey: ["missions", missionId, "route-candidates"], queryFn: ({ signal }) => getRouteCandidates(missionId!, signal), enabled: hasAccessToken() && Boolean(missionId), staleTime: 60_000 });
 export const useMissionRoutes = (missionId?: string) => useQuery({ queryKey: ["missions", missionId, "routes"], queryFn: ({ signal }) => getMissionRoutes(missionId!, signal), enabled: hasAccessToken() && Boolean(missionId), staleTime: 60_000 });
+export const useRoutes = () => useQuery({ queryKey: ["routes"], queryFn: ({ signal }) => getRoutes(signal), enabled: hasAccessToken(), staleTime: 60_000 });
 export const useMissionAlerts = (missionId?: string) => useQuery({ queryKey: ["missions", missionId, "alerts"], queryFn: ({ signal }) => getMissionAlerts(missionId!, signal), enabled: hasAccessToken() && Boolean(missionId), staleTime: 60_000 });

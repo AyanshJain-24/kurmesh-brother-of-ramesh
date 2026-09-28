@@ -73,7 +73,8 @@ def _geometry(value):
 
 def _candidate_payload(value):
     return {"id": str(value.id), "mission_id": str(value.mission_id), "prediction_id": str(value.prediction_id) if value.prediction_id else None,
-        "version": value.version, "status": value.status, "geometry": _geometry(value.geometry), "distance_nm": value.distance_nm,
+        "version": value.version, "status": value.status, "risk_data_status": getattr(value, "risk_data_status", "UNKNOWN"),
+        "geometry": _geometry(value.geometry), "distance_nm": value.distance_nm,
         "estimated_duration_hours": value.estimated_duration_hours, "risk_score": value.risk_score, "risk_components": value.risk_components,
         "environmental_snapshot": value.environmental_snapshot, "algorithm_version": value.algorithm_version, "metadata": value.metadata_json}
 
@@ -103,6 +104,23 @@ def generate_route_candidates(mission_id):
         raise ApiError("VALIDATION_ERROR", "Route candidate generation does not accept request fields", 422)
     if mission.state not in {"ANALYZING", "ROUTES_AVAILABLE"}:
         raise ApiError("INVALID_MISSION_STATE", "Route candidates can be generated only while ANALYZING or after routes are available", 409)
+
+    # If async requested and broker is available, trigger celery worker task asynchronously
+    if request.args.get("async", "false").lower() == "true":
+        try:
+            from app.worker import generate_routing_task
+            task = generate_routing_task.delay(str(mission.id))
+            return jsonify({
+                "mission_id": str(mission.id),
+                "task_id": task.id,
+                "status": "PROCESSING",
+                "candidate_count": 0,
+                "candidates": [],
+                "warnings": [],
+            }), 202
+        except Exception:
+            pass  # Fall back to synchronous path if Celery/Redis unavailable
+
     try:
         candidates, warnings = generate_candidates(g.db, mission)
     except ValueError as exc:
@@ -115,12 +133,17 @@ def generate_route_candidates(mission_id):
         mission.state = "ROUTES_AVAILABLE"
         _audit("MISSION_TRANSITIONED", "Mission", mission.id, {"state": "ROUTES_AVAILABLE", "reason": "route_candidates_generated"})
     for candidate in candidates:
-        _audit("ROUTE_CANDIDATE_GENERATED", "RouteCandidate", candidate.id, {"algorithm_version": ALGORITHM_VERSION, "route_type": candidate.metadata_json["route_type"]})
+        _audit("ROUTE_CANDIDATE_GENERATED", "RouteCandidate", candidate.id, {
+            "algorithm_version": candidate.algorithm_version,
+            "route_type": candidate.metadata_json.get("route_type", "UNKNOWN"),
+            "status": candidate.status,
+            "risk_data_status": candidate.risk_data_status,
+        })
     _commit()
     return jsonify({
         "mission_id": str(mission.id), "candidate_count": len(candidates),
         "candidates": [_candidate_payload(candidate) for candidate in candidates],
-        "algorithm_version": ALGORITHM_VERSION,
+        "algorithm_version": candidates[0].algorithm_version if candidates else ALGORITHM_VERSION,
         "environment_status": [candidate.risk_components.get("availability", "UNAVAILABLE") for candidate in candidates],
         "warnings": warnings,
     }), 201
@@ -150,9 +173,10 @@ def candidate(candidate_id):
         g.db.delete(entity); _audit("ROUTE_CANDIDATE_DELETED", "RouteCandidate", candidate_id); _commit(); return "", 204
     data = _body(RouteCandidateUpdateRequest)
     if entity.status not in {"DRAFT", "READY"}: raise ApiError("INVALID_ROUTE_CANDIDATE_STATE", "Candidate cannot be updated in its current state", 409)
-    for field in ("status", "distance_nm", "estimated_duration_hours", "risk_score"):
-        value = getattr(data, field)
-        if value is not None: setattr(entity, field, value)
+    for field in ("status", "risk_data_status", "distance_nm", "estimated_duration_hours", "risk_score"):
+        if hasattr(data, field):
+            value = getattr(data, field)
+            if value is not None: setattr(entity, field, value)
     for field, column in (("risk_components", "risk_components"), ("environmental_snapshot", "environmental_snapshot"), ("metadata", "metadata_json")):
         value = getattr(data, field)
         if value is not None: setattr(entity, column, value)
@@ -167,9 +191,10 @@ def mission_routes(mission_id):
     if request.method == "GET": return _paginate(query, _route_payload)
     data = _body(RouteCreateRequest); candidate = _candidate(data.route_candidate_id)
     if candidate.mission_id != mission_id: raise ApiError("CONFLICT", "Candidate belongs to another mission", 409)
-    if candidate.status != "READY": raise ApiError("INVALID_ROUTE_CANDIDATE_STATE", "Only READY candidates may be selected", 409)
+    if candidate.status not in {"READY", "DRAFT"}: raise ApiError("INVALID_ROUTE_CANDIDATE_STATE", "Only READY or DRAFT candidates may be selected", 409)
     entity = Route(route_candidate_id=candidate.id, status="DRAFT", geometry=candidate.geometry, metadata_json=data.metadata)
     g.db.add(entity); _audit("ROUTE_CREATED", "Route", entity.id); _commit(); return jsonify(_route_payload(entity)), 201
+
 
 
 @workflow_blueprint.route("/routes/<uuid:route_id>", methods=["GET", "PATCH"])

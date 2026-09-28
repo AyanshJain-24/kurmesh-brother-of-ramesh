@@ -4,6 +4,7 @@ from flask_cors import CORS
 
 from app.api.v1.health import health_blueprint
 from app.api.v1.application import api_blueprint
+from app.api.v1.ml import ml_blueprint
 from app.api.v1.ml_demo import ml_demo_blueprint
 from app.api.v1.workflow import workflow_blueprint
 from app.auth import ApiError
@@ -25,7 +26,21 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.extensions["kurmesh_demo_iceberg_model"] = IcebergDemoModelService.startup(
         settings.demo_iceberg_model_artifact_path,
     )
-    CORS(app, resources={r"/api/*": {"origins": settings.cors_origins}})
+    cors_origins = settings.cors_origins
+    default_dev_origins = ["http://localhost", "http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000"]
+    all_origins = list(set(cors_origins + default_dev_origins))
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": all_origins if "*" not in cors_origins else "*",
+                "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+                "expose_headers": ["Content-Type", "Authorization"],
+            }
+        },
+        supports_credentials=True if "*" not in cors_origins else False,
+    )
     app.register_blueprint(health_blueprint, url_prefix="/api/v1/health")
 
     @app.before_request
@@ -34,7 +49,7 @@ def create_app(settings: Settings | None = None) -> Flask:
         # even when the request targets a blueprint rule. Route by the stable
         # API prefix so every application API request receives the same scoped
         # session, while dependency-free health probes remain session-free.
-        if request.path.startswith("/api/v1/") and not request.path.startswith(("/api/v1/health", "/api/v1/demo/ml/")):
+        if request.path.startswith("/api/v1/") and not request.path.startswith(("/api/v1/health", "/api/v1/demo/ml/", "/api/v1/ml/")):
             g.db = app.config["KURMESH_SESSION_FACTORY"]()
 
     @app.teardown_request
@@ -66,6 +81,7 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.register_blueprint(api_blueprint, url_prefix="/api/v1")
     app.register_blueprint(workflow_blueprint, url_prefix="/api/v1")
     app.register_blueprint(ml_demo_blueprint, url_prefix="/api/v1/demo/ml")
+    app.register_blueprint(ml_blueprint, url_prefix="/api/v1/ml")
 
     @app.get("/api/v1")
     def api_root() -> dict[str, str]:

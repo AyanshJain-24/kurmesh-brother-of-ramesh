@@ -122,38 +122,7 @@ def next_candidate_versions(existing_maximum: int | None, count: int = 3) -> tup
 
 
 def generate_candidates(session: Session, mission: Mission) -> tuple[list[RouteCandidate], list[str]]:
-    """Persist the next three deterministic candidates for a valid mission."""
-    origin, destination = mission_endpoints(session, mission)
-    paths = build_candidate_paths(origin, destination)
-    speed_knots = vessel_speed_knots(mission.vessel)
-    reference = mission.departure_at or datetime.now(UTC)
-    if reference.tzinfo is None:
-        reference = reference.replace(tzinfo=UTC)
-    else:
-        reference = reference.astimezone(UTC)
-    current_version = session.scalar(select(func.max(RouteCandidate.version)).where(RouteCandidate.mission_id == mission.id))
-    versions = next_candidate_versions(current_version, len(paths))
-    created, all_warnings = [], []
-    for version, path in zip(versions, paths):
-        observations, warnings, snapshot = _observations_for_path(session, path, reference)
-        score, components, risk_warnings = calculate_risk(observations)
-        distance = distance_nm(path.coordinates)
-        duration = distance / speed_knots if speed_knots is not None else None
-        metadata = {
-            "route_type": path.route_type,
-            "geometry_crs": "EPSG:4326",
-            "geometry_method": "deterministic_great_circle_style_v1",
-            "environment_relevance": {"reference_time": reference.isoformat(), "corridor_km": RELEVANCE_CORRIDOR_KM},
-            "duration_status": "AVAILABLE" if duration is not None else "UNAVAILABLE",
-        }
-        if duration is None:
-            metadata["duration_reason"] = "Vessel specifications do not contain a positive supported speed in knots"
-        candidate = RouteCandidate(
-            id=uuid.uuid4(), mission_id=mission.id, version=version, geometry=line_wkt(path.coordinates), prediction_id=None,
-            status="READY", distance_nm=distance, estimated_duration_hours=duration, risk_score=score,
-            risk_components=components, environmental_snapshot=snapshot, algorithm_version=ALGORITHM_VERSION, metadata_json=metadata,
-        )
-        session.add(candidate)
-        created.append(candidate)
-        all_warnings.extend(warnings + risk_warnings)
-    return created, sorted(set(all_warnings))
+    """Persist deterministic polar candidates for a valid mission."""
+    from app.services.routing_service import default_routing_service
+    return default_routing_service.generate_candidates(session, mission)
+

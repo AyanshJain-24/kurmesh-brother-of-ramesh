@@ -5,4 +5,12 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   // GitHub Pages serves this repository below /kurmesh/; normal deployments stay at root.
   base: mode === "github-pages" ? "/kurmesh/" : "/",
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+    },
+  },
 }));

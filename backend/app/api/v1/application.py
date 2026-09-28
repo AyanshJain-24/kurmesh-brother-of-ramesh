@@ -1,3 +1,4 @@
+import json
 import uuid
 from datetime import UTC, datetime
 
@@ -51,8 +52,12 @@ def serialize(value):
     if isinstance(value, Vessel): return {"id": str(value.id), "name": value.name, "vessel_type": value.vessel_type, "imo_number": value.imo_number, "specifications": value.specifications}
     if isinstance(value, Mission): return {"id": str(value.id), "name": value.name, "state": value.state, "vessel_id": str(value.vessel_id) if value.vessel_id else None, "departure_at": value.departure_at.isoformat() if value.departure_at else None, "origin": _mission_location(value.origin), "destination": _mission_location(value.destination)}
     if isinstance(value, MissionConstraint): return {"id": str(value.id), "mission_id": str(value.mission_id), "constraint_type": value.constraint_type, "value": value.value}
-    if isinstance(value, Route): return {"id": str(value.id), "route_candidate_id": str(value.route_candidate_id), "status": value.status}
-    if isinstance(value, RouteCandidate): return {"id": str(value.id), "mission_id": str(value.mission_id), "version": value.version, "status": "UNAVAILABLE", "reason": "Route geometry is only created by the routing subsystem"}
+    if isinstance(value, Route):
+        raw_geom = g.db.scalar(select(func.ST_AsGeoJSON(value.geometry))) if value.geometry is not None else None
+        return {"id": str(value.id), "route_candidate_id": str(value.route_candidate_id), "status": value.status, "geometry": json.loads(raw_geom) if raw_geom else None, "metadata": value.metadata_json if hasattr(value, "metadata_json") else {}}
+    if isinstance(value, RouteCandidate):
+        raw_geom = g.db.scalar(select(func.ST_AsGeoJSON(value.geometry))) if value.geometry is not None else None
+        return {"id": str(value.id), "mission_id": str(value.mission_id), "prediction_id": str(value.prediction_id) if value.prediction_id else None, "version": value.version, "status": value.status, "risk_data_status": getattr(value, "risk_data_status", "UNKNOWN"), "geometry": json.loads(raw_geom) if raw_geom else None, "distance_nm": value.distance_nm, "estimated_duration_hours": value.estimated_duration_hours, "risk_score": value.risk_score, "risk_components": value.risk_components, "environmental_snapshot": value.environmental_snapshot, "algorithm_version": value.algorithm_version, "metadata": value.metadata_json}
     if isinstance(value, Alert): return {"id": str(value.id), "mission_id": str(value.mission_id) if value.mission_id else None, "severity": value.severity, "status": value.status, "message": value.message}
     if isinstance(value, SimulationRun): return {"id": str(value.id), "mission_id": str(value.mission_id) if value.mission_id else None, "status": value.status, "is_simulation": True}
     if isinstance(value, AuditEvent): return {"id": str(value.id), "event_type": value.event_type, "entity_type": value.entity_type, "entity_id": str(value.entity_id) if value.entity_id else None, "occurred_at": value.occurred_at.isoformat()}
