@@ -1,5 +1,12 @@
 import os
+import sys
 from logging.config import fileConfig
+
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+repo_root = os.path.dirname(backend_dir)
+for d in (repo_root, backend_dir):
+    if d and d not in sys.path:
+        sys.path.insert(0, d)
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool

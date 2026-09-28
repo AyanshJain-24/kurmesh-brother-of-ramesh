@@ -45,8 +45,17 @@ from ml.adapter import default_adapter, compute_coriolis_f
 DB_PATH = os.environ.get("DATABASE_URL", "sqlite:///backend/kurmesh.db")
 
 
+def ensure_sqlite_dir(db_url: str) -> None:
+    if db_url.startswith("sqlite:///"):
+        filepath = db_url[len("sqlite:///"):]
+        if filepath and not filepath.startswith(":"):
+            dirpath = os.path.dirname(os.path.abspath(filepath))
+            if dirpath:
+                os.makedirs(dirpath, exist_ok=True)
+
+
 def seed_database(db_url: str = DB_PATH) -> dict[str, str]:
-    # Resolve relative sqlite paths relative to repo root if needed
+    ensure_sqlite_dir(db_url)
     engine = create_engine(db_url, pool_pre_ping=True)
     Base.metadata.create_all(bind=engine)
     session_factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
@@ -386,7 +395,24 @@ def seed_database(db_url: str = DB_PATH) -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    db = sys.argv[1] if len(sys.argv) > 1 else DB_PATH
+    args = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    db = args[0] if args else os.environ.get("DATABASE_URL", DB_PATH)
+    if_empty = "--if-empty" in sys.argv or "--only-if-empty" in sys.argv
+
+    if if_empty:
+        ensure_sqlite_dir(db)
+        temp_engine = create_engine(db, pool_pre_ping=True)
+        Base.metadata.create_all(bind=temp_engine)
+        with Session(temp_engine) as check_session:
+            try:
+                has_users = check_session.scalar(select(User.id).limit(1)) is not None
+                has_candidates = check_session.scalar(select(RouteCandidate.id).limit(1)) is not None
+                if has_users and has_candidates:
+                    print(f"Database at {db} already has operational data; skipping seed.")
+                    sys.exit(0)
+            except Exception:
+                pass
+
     print(f"Seeding KURMESH SQLite database at: {db}")
     res = seed_database(db)
     print("Database seeding completed successfully:")

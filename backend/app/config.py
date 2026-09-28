@@ -71,12 +71,15 @@ class Settings:
             )
             for name in provider_names
         )
+        auth_secret = os.environ.get("AUTH_SECRET")
+        if not auth_secret:
+            auth_secret = "kurmesh-default-local-dev-auth-secret-key-32chars"
         return cls(
             database_url=os.environ.get("DATABASE_URL", ""),
             redis_url=os.environ.get("REDIS_URL", ""),
             log_level=os.environ.get("LOG_LEVEL", "INFO"),
             cors_origins=[item.strip() for item in os.environ.get("CORS_ORIGINS", "http://localhost").split(",")],
-            auth_secret=os.environ.get("AUTH_SECRET", ""),
+            auth_secret=auth_secret,
             environment_providers=providers,
             demo_iceberg_model_artifact_path=os.environ.get("KURMESH_DEMO_ICEBERG_MODEL_ARTIFACT_PATH") or None,
         )

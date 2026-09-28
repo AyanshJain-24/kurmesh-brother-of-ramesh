@@ -172,8 +172,32 @@ def _register_sqlite_spatial_functions(dbapi_conn, connection_record):
         dbapi_conn.create_function("AddGeometryColumn", -1, lambda *a: 1)
 
 
+def init_spatial_extensions(engine_or_db: Any, database_url: str | None = None) -> None:
+    """Initialize PostGIS spatial extensions if the dialect is PostgreSQL.
+
+    If db.engine.dialect.name == "sqlite" or DATABASE_URL starts with "sqlite:",
+    SKIP CREATE EXTENSION IF NOT EXISTS postgis and any PostGIS-only extension calls entirely.
+    Only execute PostGIS extension initialization if the dialect is "postgresql".
+    """
+    engine = getattr(engine_or_db, "engine", engine_or_db)
+    if isinstance(engine, sessionmaker):
+        engine = engine.kw.get("bind")
+
+    db_url = database_url or (str(engine.url) if engine and hasattr(engine, "url") else "")
+    if db_url.startswith("sqlite:") or (engine and hasattr(engine, "dialect") and engine.dialect.name == "sqlite"):
+        return
+
+    if engine and hasattr(engine, "dialect") and engine.dialect.name == "postgresql":
+        with engine.connect() as conn:
+            import sqlalchemy as sa
+            conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS postgis"))
+            conn.commit()
+
+
 def build_session_factory(database_url: str) -> sessionmaker[Session]:
     engine = create_engine(database_url, pool_pre_ping=True, future=True)
+    if not database_url.startswith("sqlite:") and engine.dialect.name == "postgresql":
+        init_spatial_extensions(engine, database_url)
     return sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 

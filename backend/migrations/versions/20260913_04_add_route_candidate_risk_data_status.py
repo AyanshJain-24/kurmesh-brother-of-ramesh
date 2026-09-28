@@ -13,11 +13,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "route_candidates",
-        sa.Column("risk_data_status", sa.String(32), nullable=True, server_default="UNKNOWN"),
-    )
+    with op.batch_alter_table("route_candidates") as batch_op:
+        batch_op.add_column(
+            sa.Column("risk_data_status", sa.String(32), nullable=True, server_default="UNKNOWN"),
+        )
 
 
 def downgrade() -> None:
-    op.drop_column("route_candidates", "risk_data_status")
+    with op.batch_alter_table("route_candidates") as batch_op:
+        batch_op.drop_column("risk_data_status")

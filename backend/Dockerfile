@@ -11,4 +11,4 @@ COPY data/ /app/data
 RUN useradd --create-home --uid 10001 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 8000
-CMD ["sh", "-c", "alembic upgrade head && python -m app.demo_seed && gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile - app.wsgi:app"]
+CMD ["sh", "-c", "alembic upgrade head && (python seed_local_db.py --if-empty || python backend/seed_local_db.py --if-empty || true) && python -m app.demo_seed && gunicorn --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile - app.wsgi:app"]
